@@ -250,3 +250,106 @@ print(model8.fit().summary())
 table = anova_lm(model7.fit(), model8.fit())
 print(table)
 
+#Exercise 14
+rng = np.random.default_rng (10)
+x1 = rng.uniform(0, 1, size=100)
+x2 = 0.5 * x1 + rng.normal(size=100) / 10
+y = 2 + 2 * x1 + 0.3 * x2 + rng.normal(size=100)
+
+plt.scatter(x1,x2) # positively correlated
+plt.xlabel("x1")
+plt.ylabel("x2")
+
+x1 = x1.reshape(100,1)
+x2 = x2.reshape(100,1)
+x  = np.append(x1, x2, 1)
+x  = sm.add_constant(x)
+
+model9 = sm.OLS(y,x) 
+print(model9.fit().summary())
+# reject null for b1, fail to reject null for b2
+
+# (d)
+x       = sm.add_constant(x1)
+model10 = sm.OLS(y,x) 
+print(model10.fit().summary())
+# reject
+
+# (e)
+x       = sm.add_constant(x2)
+model11 = sm.OLS(y,x) 
+print(model11.fit().summary())
+# reject
+
+x1 = np.append(x1, [[0.1]], 0)
+x2 = np.append(x2, [[0.8]], 0)
+y  = np.append(y, 6.0)
+
+# regress on x1 and x2
+x       = np.append(x1, x2, 1)
+x       = sm.add_constant(x)
+model12 = sm.OLS(y,x) 
+print(model12.fit().summary())
+
+#Exercise 15
+# Q15
+Boston = load_data('Boston')
+
+# (a)
+results = []
+y       = Boston.loc[:,'crim']
+for i in range(2, 15, 1):
+    name  = Boston.columns[i] 
+    x     = Boston.loc[:, name]
+    x     = sm.add_constant(x)
+    model = sm.OLS(y,x)   
+    results.append({name: model.fit().pvalues[1]})  
+
+results
+
+x         = Boston.iloc[:, 2:15]
+x         = sm.add_constant(x)
+y         = Boston.loc[:,'crim']
+model_all = sm.OLS(y,x)   
+print(model_all.fit().summary())
+# reject for: zn, nox, dis, rad, black, istat, medv
+
+uni_coef = np.zeros(13)
+y        = Boston.loc[:,'crim']
+for i in range(2, 15, 1):
+    name          = Boston.columns[i] 
+    x             = Boston.loc[:, name]
+    x             = sm.add_constant(x)
+    model         = sm.OLS(y,x)   
+    uni_coef[i-2] = model.fit().params[1]
+
+mul_coef = model_all.fit().params[1:14]
+
+plt.scatter(uni_coef, mul_coef)
+plt.xlabel('uni coef')
+plt.ylabel('mul coef')
+
+uni_coef-mul_coef
+
+def poly(x, p):
+    x = np.array(x)
+    X = np.transpose(np.vstack((x**k for k in range(p+1))))
+    return np.linalg.qr(X)[0][:,1:]
+
+results = []
+y       = Boston.loc[:,'crim']
+for i in range(2, 15, 1):
+    name  = Boston.columns[i] 
+    temp  = pd.DataFrame(Boston[name])
+    x1    = poly(temp, 3)[:, 0]
+    x2    = poly(temp, 3)[:, 1]
+    x3    = poly(temp, 3)[:, 2]
+    x     = np.array([x1, x2, x3]).T
+    x     = sm.add_constant(x)
+    model = sm.OLS(y,x)   
+    results.append(model.fit().pvalues[2:4])  
+
+display            = pd.DataFrame(results, index=Boston.columns[2:15])
+display['linear?'] = np.where((display.x2 < 0.1) | (display.x3 < 0.1), 'N', 'Y')
+print(display)
+# No evidence of non-linear association for chas and Black.
