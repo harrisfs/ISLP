@@ -158,6 +158,95 @@ ax.axhline(0, c='k', ls='--')
 
 anovadfc = pd.DataFrame(anova_lm(resultsc,resultsc1))
 
-#Exercise 11
+infl = resultsc1.get_influence()
+ax = subplots(figsize=(8,8))[1]
+ax.scatter(np.arange(Xc1.shape[0]),infl.hat_matrix_diag)
+ax.set_xlabel('Index')
+ax.set_ylabel('Leverage')
+np.argmax(infl.hat_matrix_diag)
 
+#Exercise 11
+rng = np.random.default_rng(1)
+x = rng.normal(size=100)
+y = 2 * x + rng.normal(size=100)
+
+model1     = sm.OLS(y,x)
+model1_fit = model1.fit()
+print(model1_fit.summary())
+
+ax = subplots(figsize=(8,8))[1]
+ax.scatter(model1_fit.fittedvalues , model1_fit.resid)
+ax.set_xlabel('Fitted value')
+ax.set_ylabel('Residual')
+ax.axhline(0, c='k', ls='--')
+
+model2     = sm.OLS(x,y)
+model2_fit = model2.fit()
+print(model2_fit.summary())
+
+x2 = sm.add_constant(x) # add intercept
+y2 = sm.add_constant(y) # add intercept
+
+model3     = sm.OLS(y,x2)
+model3_fit = model3.fit()
+print(model3_fit.summary())
+
+ax = subplots(figsize=(8,8))[1]
+ax.scatter(model3_fit.fittedvalues , model3_fit.resid)
+ax.set_xlabel('Fitted value')
+ax.set_ylabel('Residual')
+ax.axhline(0, c='k', ls='--')
+
+model4     = sm.OLS(x,y2)
+model4_fit = model4.fit()
+print(model4_fit.summary())
+
+anovadf = pd.DataFrame(anova_lm(model1_fit,model3_fit))
+
+#Exercise 13
+
+# Q13
+np.random.seed(1)
+
+# (a)
+x = np.random.normal(0, 1, size=(100,1))
+
+# (b)
+eps = np.random.normal(0, 0.05, size=(100,1)) 
+
+y = -1 + 0.5*x + eps
+len(y) # length = 100
+
+plt.scatter(x,y) # positively correlated
+plt.xlabel("x")
+plt.ylabel("y")
+
+x = sm.add_constant(x) # add intercept
+
+model7     = sm.OLS(y,x)
+model7_fit = model7.fit()
+print(model7_fit.summary())
+
+a     = model7_fit.params[0]
+b     = model7_fit.params[1]
+yfit  = [a + b*xi for xi in x[:,1]]
+ytrue = [-1. + 0.5*xi for xi in x[:,1]]
+
+plt.scatter(x[:,1],y)
+plt.xlabel("x")
+plt.ylabel("y")
+plt.plot(x[:,1], yfit, 'blue', label='model fit')
+plt.plot(x[:,1], ytrue, 'red', label='population')
+plt.legend(loc='upper left')
+
+x2 = np.power(x,2)[:,1]
+x2 = x2.reshape(100,1)
+x  = np.append(x, x2, 1)
+
+model8     = sm.OLS(y,x)
+model8_fit = model8.fit()
+print(model8.fit().summary())
+
+table = anova_lm(model7.fit(), model8.fit())
+print(table)
 
